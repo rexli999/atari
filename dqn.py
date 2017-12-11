@@ -25,7 +25,8 @@ def learn(env,
           frame_history_len=4,
           target_update_freq=10000,
           grad_norm_clipping=10,
-          if_save = True):
+          if_save = True,
+          if_double = True):
     """Run Deep Q-learning algorithm.
 
     You can specify your own convnet using q_func.
@@ -151,7 +152,15 @@ def learn(env,
     gather_indicies = tf.range(batch_size) * tf.shape(current_q_func)[1] + act_t_ph
     q_act_value = tf.gather(tf.reshape(current_q_func, [-1]), gather_indicies)
 
-    q_act_estimate = rew_t_ph + gamma * tf.reduce_max(target_q_func, reduction_indices=[1])
+    if if_double:
+        next_q_func = q_func(obs_tp1_float, num_actions, scope = "q_func", reuse = False)
+    else:
+        next_q_func = target_q_func
+
+    best_actions = tf.cast(tf.argmax(next_q_func, axis = 1), tf.int32)
+    gather_indicies_target = tf.range(batch_size) * tf.shape(target_q_func)[1] + best_actions
+    target_q_value = tf.gather(tf.reshape(target_q_func, [-1]), gather_indicies_target)
+    q_act_estimate = rew_t_ph + gamma * target_q_value#tf.reduce_max(target_q_func, reduction_indices=[1])
 
     total_error = huber_loss(tf.subtract(q_act_estimate, q_act_value))
     loss_summary = tf.summary.scalar('Huber_Loss', total_error)
@@ -328,7 +337,8 @@ def learn(env,
 
         ### 4. Log progress
         episode_rewards = get_wrapper_by_name(env, "Monitor").get_episode_rewards()
-        rewards_record.append(episode_rewards)
+        if len(episode_rewards) > 0:
+            rewards_record.append(episode_rewards[-1])
 
         if len(episode_rewards) > 0:
             mean_episode_reward = np.mean(episode_rewards[-100:])
