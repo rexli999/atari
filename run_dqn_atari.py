@@ -77,7 +77,7 @@ def atari_learn(env,
         target_update_freq=10000,
         grad_norm_clipping=10,
         if_save = True,
-        if_double = True
+        if_double = False
     )
     env.close()
 
