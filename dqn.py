@@ -160,7 +160,7 @@ def learn(env,
     best_actions = tf.cast(tf.argmax(next_q_func, axis = 1), tf.int32)
     gather_indicies_target = tf.range(batch_size) * tf.shape(target_q_func)[1] + best_actions
     target_q_value = tf.gather(tf.reshape(target_q_func, [-1]), gather_indicies_target)
-    q_act_estimate = rew_t_ph + gamma * target_q_value#tf.reduce_max(target_q_func, reduction_indices=[1])
+    q_act_estimate = rew_t_ph + gamma * target_q_value # * (1 - done_mask_ph)#tf.reduce_max(target_q_func, reduction_indices=[1])
 
     total_error = huber_loss(tf.subtract(q_act_estimate, q_act_value))
     loss_summary = tf.summary.scalar('Huber_Loss', total_error)
