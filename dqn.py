@@ -162,8 +162,10 @@ def learn(env,
     target_q_value = tf.gather(tf.reshape(target_q_func, [-1]), gather_indicies_target)
     q_act_estimate = rew_t_ph + gamma * (1 - done_mask_ph) * target_q_value#tf.reduce_max(target_q_func, reduction_indices=[1])
 
-    total_error = huber_loss(tf.subtract(q_act_estimate, q_act_value))
+    total_error = huber_loss(tf.reduce_mean(tf.subtract(q_act_estimate, q_act_value)))
     loss_summary = tf.summary.scalar('Huber_Loss', total_error)
+    summary_op = tf.summary.merge_all()
+    summary_writer = tf.summary.FileWriter('example1', session.graph)
 
     if if_save:
         saver = tf.train.Saver()
@@ -325,8 +327,9 @@ def learn(env,
                 model_initialized = True
 
             # 3.c Train the model using train_fn and total_error
-            session.run(train_fn, {obs_t_ph: obs_t_batch, act_t_ph: act_batch, rew_t_ph: rew_batch, obs_tp1_ph: obs_tp1_batch,
-                done_mask_ph: done_mask, learning_rate: optimizer_spec.lr_schedule.value(t)})
+            _,summary= session.run((train_fn,summary_op), {obs_t_ph: obs_t_batch, act_t_ph: act_batch, rew_t_ph: rew_batch, obs_tp1_ph: obs_tp1_batch, done_mask_ph: done_mask, learning_rate: optimizer_spec.lr_schedule.value(t)})
+            
+            summary_writer.add_summary(summary,t)
 
             # 3.d Update target network every taret_update_freq steps
             if t % target_update_freq == 0:
