@@ -186,8 +186,7 @@ def learn(env,
     update_target_fn = tf.group(*update_target_fn)
 
     # construct the replay buffer
-    replay_buffer = ReplayBuffer(
-        _size, frame_history_len)
+    replay_buffer = ReplayBuffer(replay_buffer_size, frame_history_len)
 
     ###############
     # RUN ENV     #
