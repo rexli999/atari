@@ -161,7 +161,7 @@ def learn(env,
     e=tf.placeholder(tf.float32, shape=())
 
     actlist=[]
-    for i in tf.range(batch_size):
+    for i in range(batch_size):
         if random.random() < e:
             act = env.action_space.sample()
         else:
