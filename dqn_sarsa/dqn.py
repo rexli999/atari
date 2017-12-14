@@ -159,10 +159,10 @@ def learn(env,
     #     next_q_func = target_q_func
 
     e=tf.placeholder(tf.float32, shape=())
-    rd=tf.constant(random.random())
+    rd=tf.placeholder(tf.float32, shape=())
     actlist=[]
     for i in range(batch_size):
-        if e is not None and e>rd:
+        if e is not None and rd is not None and e > rd:
             act = env.action_space.sample()
         else:
             input_batch = replay_buffer.encode_recent_observation()
@@ -343,7 +343,7 @@ def learn(env,
                 model_initialized = True
 
             # 3.c Train the model using train_fn and total_error
-            _,summary= session.run((train_fn,summary_op), {obs_t_ph: obs_t_batch, act_t_ph: act_batch, rew_t_ph: rew_batch, obs_tp1_ph: obs_tp1_batch, done_mask_ph: done_mask, learning_rate: optimizer_spec.lr_schedule.value(t),e:epsilon})
+            _,summary= session.run((train_fn,summary_op), {obs_t_ph: obs_t_batch, act_t_ph: act_batch, rew_t_ph: rew_batch, obs_tp1_ph: obs_tp1_batch, done_mask_ph: done_mask, learning_rate: optimizer_spec.lr_schedule.value(t),e:epsilon,rd:random.random()})
             
             summary_writer.add_summary(summary,t)
 
