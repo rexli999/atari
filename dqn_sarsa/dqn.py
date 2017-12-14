@@ -162,7 +162,7 @@ def learn(env,
 
     actlist=[]
     for i in range(batch_size):
-        if random.random() < e is not None:
+        if tf.cond(random.random() < e):
             act = env.action_space.sample()
         else:
             input_batch = replay_buffer.encode_recent_observation()
