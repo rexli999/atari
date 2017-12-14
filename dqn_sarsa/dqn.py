@@ -157,10 +157,24 @@ def learn(env,
     # else:
     #     next_q_func = target_q_func
 
-    # best_actions = tf.cast(tf.argmax(next_q_func, axis = 1), tf.int32)
-    # gather_indicies_target = tf.range(batch_size) * tf.shape(target_q_func)[1] + best_actions
     e=tf.placeholder(tf.float32, shape=())
-    target_q_value = e / num_actions * tf.reduce_sum(target_q_func, 1) + (1 - e) * tf.reduce_max(target_q_func, reduction_indices=[1])
+
+    actlist=[]
+    for i in range(batch_size):
+        if random.random() < e:
+            act = env.action_space.sample()
+        else:
+            input_batch = replay_buffer.encode_recent_observation()
+            q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
+            act = np.argmax(q_vals)
+        actlist.append(act)  
+
+    best_actions = tf.cast(actlist, tf.int32)
+    gather_indicies_target = tf.range(batch_size) * tf.shape(target_q_func)[1] + best_actions
+    target_q_value = tf.gather(tf.reshape(current_q_func, [-1]), gather_indicies_target)
+
+   
+    # target_q_value = e / num_actions * tf.reduce_sum(target_q_func, 1) + (1 - e) * tf.reduce_max(target_q_func, reduction_indices=[1])
     q_act_estimate = rew_t_ph + gamma * (1 - done_mask_ph) * target_q_value#tf.reduce_max(target_q_func, reduction_indices=[1])
 
     total_error = huber_loss(tf.reduce_mean(tf.subtract(q_act_estimate, q_act_value)))
