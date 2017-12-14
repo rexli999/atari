@@ -162,7 +162,7 @@ def learn(env,
     rd=tf.placeholder(tf.float32, shape=())
     actlist=[]
     for i in range(batch_size):
-        if e is not None and fd is not None and tf.less(rd,e):
+        if e is not None and rd is not None and tf.less(rd,e):
             act = env.action_space.sample()
         else:
             input_batch = replay_buffer.encode_recent_observation()
