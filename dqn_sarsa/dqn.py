@@ -159,15 +159,24 @@ def learn(env,
     #     next_q_func = target_q_func
 
     e=tf.placeholder(tf.float32, shape=())
-    rd=tf.placeholder(tf.float32, shape=())
+    rd=tf.constnt(random.random())
+
+    def f1(): return env.action_space.sample()
+
+    def f2(): 
+        input_batch = replay_buffer.encode_recent_observation()
+        q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
+        return np.argmax(q_vals)
+
     actlist=[]
     for i in range(batch_size):
-        if e is not None and rd is not None and e > rd:
-            act = env.action_space.sample()
-        else:
-            input_batch = replay_buffer.encode_recent_observation()
-            q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
-            act = np.argmax(q_vals)
+        act=tf.cond(tf.less(rd,e),f1,f2)
+        # if tf.less(rd,e) is not None and tf.less(rd,e):
+        #     act = env.action_space.sample()
+        # else:
+        #     input_batch = replay_buffer.encode_recent_observation()
+        #     q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
+        #     act = np.argmax(q_vals)
         actlist.append(act)  
 
     best_actions = tf.cast(actlist, tf.int32)
