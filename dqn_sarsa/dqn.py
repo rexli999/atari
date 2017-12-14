@@ -150,6 +150,7 @@ def learn(env,
     target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_q_func')
 
     gather_indicies = tf.range(batch_size) * tf.shape(current_q_func)[1] + act_t_ph
+
     q_act_value = tf.gather(tf.reshape(current_q_func, [-1]), gather_indicies)
 
     # if if_double:
@@ -160,7 +161,7 @@ def learn(env,
     e=tf.placeholder(tf.float32, shape=())
 
     actlist=[]
-    for i in range(batch_size):
+    for i in tf.range(batch_size):
         if random.random() < e:
             act = env.action_space.sample()
         else:
