@@ -159,7 +159,7 @@ def learn(env,
     #     next_q_func = target_q_func
 
     e=tf.placeholder(tf.float32, shape=())
-    rd=tf.constnt(random.random())
+    rd=tf.constant(random.random())
 
     def f1(): return env.action_space.sample()
 
