@@ -168,19 +168,23 @@ def learn(env,
     #     q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
     #     return np.argmax(q_vals)
 
-    actlist=[]
-    for i in range(batch_size):
-        # act=tf.cond(tf.less(rd,e),f1,f2)
-        if e.eval()>random.random():
-            act = env.action_space.sample()
-        else:
-            input_batch = replay_buffer.encode_recent_observation()
-            q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
-            act = np.argmax(q_vals)
-        actlist.append(act)  
+#     actlist=[]
+#     for i in range(batch_size):
+#         # act=tf.cond(tf.less(rd,e),f1,f2)
+#         if e.eval()>random.random():
+#             act = env.action_space.sample()
+#         else:
+#             input_batch = replay_buffer.encode_recent_observation()
+#             q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
+#             act = np.argmax(q_vals)
+#         actlist.append(act)  
+    if_greedy = tf.placeholder(tf.bool, [None])
+    greedy_mask = list(map(lambda s: s is True, if_greedy))
+    action_list = np.random.randint(num_actions, size=tf.shape(if_greedy))
+    action_list[greedy_mask] = tf.argmax(target_q_func[greedy_mask], axis = 1)
 
-    best_actions = tf.cast(actlist, tf.int32)
-    gather_indicies_target = tf.range(batch_size) * tf.shape(target_q_func)[1] + best_actions
+    greedy_actions = tf.cast(actlist, tf.int32)
+    gather_indicies_target = tf.range(batch_size) * tf.shape(target_q_func)[1] + greedy_actions
     target_q_value = tf.gather(tf.reshape(current_q_func, [-1]), gather_indicies_target)
 
    
@@ -352,7 +356,8 @@ def learn(env,
                 model_initialized = True
 
             # 3.c Train the model using train_fn and total_error
-            _,summary= session.run((train_fn,summary_op), {obs_t_ph: obs_t_batch, act_t_ph: act_batch, rew_t_ph: rew_batch, obs_tp1_ph: obs_tp1_batch, done_mask_ph: done_mask, learning_rate: optimizer_spec.lr_schedule.value(t),e:epsilon,rd:random.random()})
+            if_greedy = np.random.rand(batch_size) > epsilon
+            _,summary= session.run((train_fn,summary_op), {obs_t_ph: obs_t_batch, act_t_ph: act_batch, rew_t_ph: rew_batch, obs_tp1_ph: obs_tp1_batch, done_mask_ph: done_mask, learning_rate: optimizer_spec.lr_schedule.value(t), if_greedy: if_greedy})
             
             summary_writer.add_summary(summary,t)
 
