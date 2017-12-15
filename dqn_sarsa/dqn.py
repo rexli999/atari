@@ -150,7 +150,6 @@ def learn(env,
     target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_q_func')
 
     gather_indicies = tf.range(batch_size) * tf.shape(current_q_func)[1] + act_t_ph
-
     q_act_value = tf.gather(tf.reshape(current_q_func, [-1]), gather_indicies)
 
     # if if_double:
@@ -158,40 +157,13 @@ def learn(env,
     # else:
     #     next_q_func = target_q_func
 
-    e=tf.placeholder(tf.float32, shape=())
-    # rd=tf.constant(random.random())
-
-    # def f1(): return env.action_space.sample()
-
-    # def f2(): 
-    #     input_batch = replay_buffer.encode_recent_observation()
-    #     q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
-    #     return np.argmax(q_vals)
-
-#     actlist=[]
-#     for i in range(batch_size):
-#         # act=tf.cond(tf.less(rd,e),f1,f2)
-#         if e.eval()>random.random():
-#             act = env.action_space.sample()
-#         else:
-#             input_batch = replay_buffer.encode_recent_observation()
-#             q_vals = session.run(current_q_func, {obs_t_ph: input_batch[None, :]})
-#             act = np.argmax(q_vals)
-#         actlist.append(act)  
-    if_greedy = tf.placeholder(tf.bool, [None])
-    greedy_mask = list(map(lambda s: s is True, if_greedy))
-    action_list = np.random.randint(num_actions, size=tf.shape(if_greedy))
-    action_list[greedy_mask] = tf.argmax(target_q_func[greedy_mask], axis = 1)
-
-    greedy_actions = tf.cast(actlist, tf.int32)
-    gather_indicies_target = tf.range(batch_size) * tf.shape(target_q_func)[1] + greedy_actions
-    target_q_value = tf.gather(tf.reshape(current_q_func, [-1]), gather_indicies_target)
-
-   
-    # target_q_value = e / num_actions * tf.reduce_sum(target_q_func, 1) + (1 - e) * tf.reduce_max(target_q_func, reduction_indices=[1])
+    # best_actions = tf.cast(tf.argmax(next_q_func, axis = 1), tf.int32)
+    # gather_indicies_target = tf.range(batch_size) * tf.shape(target_q_func)[1] + best_actions
+    e=tf.placeholder(tf.float32, [None])
+    target_q_value = e / num_actions * tf.reduce_sum(targer_q_func, 1) + (1 - e) * tf.reduce_max(target_q_func, reduction_indices=[1])
     q_act_estimate = rew_t_ph + gamma * (1 - done_mask_ph) * target_q_value#tf.reduce_max(target_q_func, reduction_indices=[1])
 
-    total_error = huber_loss(tf.reduce_mean(tf.subtract(q_act_estimate, q_act_value)))
+    total_error = tf.reduce_mean(huber_loss(tf.subtract(q_act_estimate, q_act_value)))
     loss_summary = tf.summary.scalar('Huber_Loss', total_error)
     summary_op = tf.summary.merge_all()
     summary_writer = tf.summary.FileWriter('example1', session.graph)
@@ -214,7 +186,8 @@ def learn(env,
     update_target_fn = tf.group(*update_target_fn)
 
     # construct the replay buffer
-    replay_buffer = ReplayBuffer(replay_buffer_size, frame_history_len)
+    replay_buffer = ReplayBuffer(
+        _size, frame_history_len)
 
     ###############
     # RUN ENV     #
@@ -356,8 +329,7 @@ def learn(env,
                 model_initialized = True
 
             # 3.c Train the model using train_fn and total_error
-            if_greedy = np.random.rand(batch_size) > epsilon
-            _,summary= session.run((train_fn,summary_op), {obs_t_ph: obs_t_batch, act_t_ph: act_batch, rew_t_ph: rew_batch, obs_tp1_ph: obs_tp1_batch, done_mask_ph: done_mask, learning_rate: optimizer_spec.lr_schedule.value(t), if_greedy: if_greedy})
+            _,summary= session.run((train_fn,summary_op), {obs_t_ph: obs_t_batch, act_t_ph: act_batch, rew_t_ph: rew_batch, obs_tp1_ph: obs_tp1_batch, done_mask_ph: done_mask, learning_rate: optimizer_spec.lr_schedule.value(t),e:epsilon})
             
             summary_writer.add_summary(summary,t)
 
