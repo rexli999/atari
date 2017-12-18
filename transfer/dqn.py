@@ -159,11 +159,11 @@ def learn(env,
     # update_target_fn will be called periodically to copy Q network to target Q network
 
     current_q_func = q_func(obs_t_float, num_actions, scope="q_func", reuse=False) # Current Q-Value Function
-    q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='q_func/action_value')
+    q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='q_func')#/action_value')
     q_func_vars_tf = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='q_func/convnet')
 
     target_q_func = q_func(obs_tp1_float, num_actions, scope="target_q_func", reuse=False) # Target Q-Value Function
-    target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_q_func/action_value')
+    target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_q_func')#/action_value')
     target_q_func_vars_tf = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_q_func/convnet')
 
 
